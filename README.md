@@ -148,9 +148,11 @@ Since the owner of this dir is root by default.
 
 ## Extra notes on the setup
 If you need help understanding the options of the first command, you can run `docker-compose run --rm openvpn ovpn_genconfig help` and it will show all the available options. However, be careful since the script will just ignore options that are configured wrong.
-
+Remember to change **MYVPN.PUBLIC.IP.OR.DOMAIN** to your public IP or DNS name!
 
 ## Start docker-compose
+
+Before starting docker-compose make sure the docker-compose.yml settings **OPENVPNMONITOR_DEFAULT_SITE** and **OPENVPNMONITOR_SITES_0_NAME** are adjusted to your needs. Also, the logo.png will be shown at the top level of the OpenVPN monitor page, you can change that to your needs as well
 
 ```
 docker-compose up -d
