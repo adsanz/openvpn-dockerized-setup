@@ -1,0 +1,31 @@
+version: "3.6"
+services:
+  openvpn:
+    image: kylemanna/openvpn
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    container_name: openvpn
+    ports:
+      - "1194:1194/udp"
+      - "5555:5555"
+    restart: always
+    volumes:
+      - ./openvpn-data/conf:/etc/openvpn
+  openvpn-monitor:
+    image: ruimarinho/openvpn-monitor
+    container_name: openvpn-monitor
+    ports:
+      - '8080:80'
+    environment:
+      - OPENVPNMONITOR_DEFAULT_MAPS=True
+      - OPENVPNMONITOR_DEFAULT_SITE=MyCompany
+      - OPENVPNMONITOR_SITES_0_NAME=MyVPNName
+      - OPENVPNMONITOR_SITES_0_HOST=openvpn
+      - OPENVPNMONITOR_SITES_0_PORT=5555
+      - OPENVPNMONITOR_DEFAULT_LOGO=logo.png
+    volumes:
+      - ./logo.png:/openvpn-monitor/images/logo.png
+    depends_on:
+      - openvpn
+
