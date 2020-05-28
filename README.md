@@ -18,50 +18,49 @@ This repo contains the docker-compose configuration for a secured, speed-optimiz
 
 ## First run 
 
-### Configure IPtables (NOT FOR PROD)
-Because openvpn needs IPtables to work... The next line needs to be added on `/etc/default/docker` 
+### Configure host system
+
+### IPtables
+
+Since working directly with IPtables may prove to be quite difficult, I'll work with UFW (Uncomplicated FireWall) and ufw-docker utility
+
+We'll use ufw-docker util to manage firewalls on UFW
+
+To download the tool:
 
 ```
-DOCKER_OPTS="--iptables=true"
+sudo wget -O /usr/local/bin/ufw-docker \
+  https://github.com/chaifeng/ufw-docker/raw/master/ufw-docker
+chmod +x /usr/local/bin/ufw-docker
 ```
 
-Then restart docker service.
-
-If no /etc/defaults/docker is found, you should edit the systemd file usually at: `/lib/systemd/system/docker.service` and add `--iptables=true` at the end of the ExecStart command. It should look something like this:
-```
-[Service]
-Type=notify
-# the default is not to use systemd for cgroups because the delegate issues still
-# exists and systemd currently does not support the cgroup feature set required
-# for containers run by docker
-ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --iptables=true
-ExecReload=/bin/kill -s HUP $MAINPID
-TimeoutSec=0
-RestartSec=2
-Restart=always
-```
-After that run:
-```
-systemctl daemon-reload && systemctl restart docker
-```
-
-### Configure Prod ready
-Docker gives 0 **** about UFW and usually ignores all those rules, so in this case if you wan't to use UFW (which you should) edit either `/etc/default/docker` or `/lib/systemd/system/docker.service` and add `--iptables=false` issue the next comands:
+Then on UFW
 
 ```
-systemctl daemon-reload && systemctl restart docker
-```
-Then run this:
-```
-ufw deny incoming
-ufw allow outgoing
-sed -i -e 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/g' /etc/default/ufw
-iptables -t nat -A POSTROUTING ! -o docker0 -s 172.17.0.0/16 -j MASQUERADE
-ufw allow 22/tcp 
-ufw allow 1194/udp
-ufw allow 80/tcp
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh
+ufw allow http
 ufw enable
 ```
+
+Then run 
+
+```
+ufw-docker install
+```
+
+This will install some IPtables rules to allow outgoing traffic from docker.
+
+**Now proceed with the following steeps and after running `docker-compose up -d` execute the next command:**
+
+```
+ufw-docker allow openvpn 1194/udp
+```
+
+This rule will make the VPN port available and you should be able to connect.
+
+### Nginx to acces OpenVPN monitor
 
 Install nginx extras:
 ```
@@ -91,7 +90,7 @@ server {
 
 With this set-up you'll have secured the management interface.
 
-### Docker compose starting configuration
+## Docker compose starting configuration
 
 To init the basic configuration:
 ```
